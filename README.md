@@ -1,7 +1,7 @@
 # Wikipedia-API-Revision-Compare-Gather-Store
 Summary:
 
-Script to gather 25 revisions of  a list of wikipedia page urls (or just one) entered into List_of_https.txt file (csv format) and compare each revision sequentially. Information is saved seperately into a txt file for each respective url
+Script to gather 25 revisions of  a list of wikipedia page urls (or just one) entered into List_of_https.txt file (csv format) and compare each revision sequentially. Information is saved seperately into a csv file organized by each url
 
 BEFORE USING:
 
@@ -17,4 +17,4 @@ ex: https://en.wikipedia.org/wiki/Husky_Energy,https://en.wikipedia.org/wiki/Tes
 
 2. Execute  Wikipedia_Revision_Gather_Store.py file
 
-3. txt files of revision differences for each url input saved in same directory of List_of_https.txt and Wikipedia_Revision_Gather_Store.py directory
+3. csv file of revision differences for each url input saved in same directory of List_of_https.txt and Wikipedia_Revision_Gather_Store.py directory
