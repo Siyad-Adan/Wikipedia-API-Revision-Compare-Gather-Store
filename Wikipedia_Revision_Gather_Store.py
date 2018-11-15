@@ -29,7 +29,7 @@ def load_https(filename):
     return urls
 
 
-def get_revision_id(urls,revisionlimit):
+def get_revision_id(urls):
     """
     (String[]) --> List[String[]]
     
@@ -42,12 +42,12 @@ def get_revision_id(urls,revisionlimit):
     
     for link in urls:
         link_revision_info = []
-        url = "https://en.wikipedia.org/w/api.php?action=query&format=xml&prop=revisions&rvlimit="+str(int(revisionlimit)+1)+"&titles="+ (link.split("/"))[-1] +"&rvprop=ids|timestamp&rvexcludeuser=127.0.0.1"
+        url = "https://en.wikipedia.org/w/api.php?action=query&format=xml&prop=revisions&rvlimit=26&titles="+ (link.split("/"))[-1] +"&rvprop=ids|timestamp&rvexcludeuser=127.0.0.1"
         next = ''
         while True:
             response = urllib.request.urlopen(url + next).read()     
             link_revision_info += re.findall('<rev [^>]*>', response.decode('utf-8'))  
-            if len(link_revision_info) == (int(revisionlimit) + 1):
+            if len(link_revision_info) == 26:
                 break
             cont = re.search('<continue rvcontinue="([^"]+)"', response.decode('utf-8'))
             if not cont:                                      
@@ -84,7 +84,6 @@ def get_difference_between_revisions(revision_one,timestamp_one,revision_two,tim
     
     soup = BeautifulSoup(com,'lxml')
     
-    
     lister = soup.find_all('td')
     
     lsz_added = map(str,lister)
@@ -96,23 +95,14 @@ def get_difference_between_revisions(revision_one,timestamp_one,revision_two,tim
     indices = [i for i, text in enumerate(lsz_added) if 'addedline' in text]
     
     for added_text in indices:
-        if lister[added_text].get_text() in added_text_holder:
-            break
-        else:
-            if lister[added_text].get_text() != "":
-                edited_text = lister[added_text].get_text().split(",")
-                fixed_added_text = " ".join(edited_text)
-                added_text_holder.append(revision_one + "sez" + timestamp_one + "sez" + revision_two + "sez" + timestamp_two + "sez"  +"added text: " +fixed_added_text)
-       
+        if lister[added_text].get_text() != "":
+            added_text_holder.append("********ADDED TEXT********" + "\n" +"Revision id " + revision_one + " " + "(" + timestamp_one + ")" + " to " + revision_two + " " + "(" + timestamp_two + ")")
+            added_text_holder.append(lister[added_text].get_text())
     
     for deleted_text in indices_two:
-        if lister[deleted_text].get_text() in removed_text_holder:
-            break
-        else:
-            if lister[deleted_text].get_text() != "":
-                edited_text = lister[deleted_text].get_text().split(",")
-                fixed_deleted_text = " ".join(edited_text)                
-                removed_text_holder.append(revision_one + "sez" + timestamp_one + "sez" + revision_two + "sez" + timestamp_two + "sez" +"removed text: " + fixed_deleted_text)    
+        if lister[deleted_text].get_text() != "":
+            removed_text_holder.append("********DELETED TEXT********" +"\n" + "Revision id " + revision_one + " " + "(" + timestamp_one + ")" + " to " + revision_two + " " + "(" + timestamp_two + ")")
+            removed_text_holder.append(lister[deleted_text].get_text())    
     
     difference_holder.append(added_text_holder)
     difference_holder.append(removed_text_holder)
@@ -120,14 +110,14 @@ def get_difference_between_revisions(revision_one,timestamp_one,revision_two,tim
     return difference_holder
 
 
-def get_sequential_set_of_revisions_difference(revisions):
+def get_sequential_set_of_revisions_difference():
     """
     () --> List[List[List[Dictionary[]]]]
     
     returns a nested list of differences between sequential revisions of each url listed in txt file
     
     """
-    set_of_urls_info = extract_parent_ids(revisions)
+    set_of_urls_info = extract_parent_ids()
     dataset_for_url_info = []
     pos = 0
     for url in set_of_urls_info:
@@ -150,34 +140,30 @@ def get_sequential_set_of_revisions_difference(revisions):
     
     return dataset_for_url_info
 
-def write_revisions_to_file(urls,revisions):
-    x = get_sequential_set_of_revisions_difference(revisions)
-    filename = " set_of_information.csv"
-    file = open(filename, 'w')
+def write_revisions_to_file(urls):
+    x = get_sequential_set_of_revisions_difference()
     for index in range(len(urls)): 
-        file = open(filename, 'a')
-        file.write((urls[index].split("/"))[-1] + " information,\n")
-        file.write("Revision id 1,timestamp 1,Revision id 2,timestamp 2,\n")
+        filename = (urls[index].split("/"))[-1] + " information.txt"
+        file = open(filename, 'w')
+        
         for index_two in range(len(x[index])):
+            file.write("REVISION SET " + str(index_two + 1) + "\n\n")
             for index_three in range(len(x[index][index_two])):
-                for revison in x[index][index_two][index_three]:
-                    information = revison.split("sez")
-                    file.write(information[0])
-                    for i in range(1,len(information)):
-                        file.write("," + information[i])
-                    file.write(",\n")
+                for revision in x[index][index_two][index_three]:
+                    file.write(revision)
+                    file.write("\n\n\n\n")
 
     file.close()
 
 
   
-def extract_parent_ids(revisions):
+def extract_parent_ids():
     urls = load_https('List_of_https.txt') 
     
     urls_information_ids_timestamp = []
  
     
-    revision_info = get_revision_id(urls,revisions)
+    revision_info = get_revision_id(urls)
     
     for element in revision_info:
         information_ids_timestamp = []  
@@ -190,7 +176,6 @@ def extract_parent_ids(revisions):
             info_dict [parent_info_id[index][2]] = timestamp_info[index]
         
         information_ids_timestamp.append(info_dict)
-
             
         urls_information_ids_timestamp.append(information_ids_timestamp)
         
@@ -200,9 +185,8 @@ def extract_parent_ids(revisions):
 
 
 def main():
-    #revisions = input("How many revisions for the url(s)? ")
     urls = load_https('List_of_https.txt')
-    write_revisions_to_file(urls,"5")
-                            
+    write_revisions_to_file(urls)
+    
 if __name__ == "__main__":
     main()
